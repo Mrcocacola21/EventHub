@@ -63,6 +63,24 @@ Health endpoint:
 http://localhost:8000/api/health/
 ```
 
+## Backend Features
+
+- Users/Auth: email login, JWT, roles (`USER`, `ORGANIZER`, `ADMIN`), profile.
+- Events API: event categories and events with role-based access.
+- Event lifecycle: `publish`, `cancel`, and `finish` actions.
+- Events support filtering by category/status/publication/location, search by
+  title/description/location, and ordering by dates, creation time, and title.
+- TicketType: event ticket categories with availability checks, sales periods,
+  organizer/admin permissions, nested event API, and Event admin inline.
+- Bookings: atomic ticket booking with `transaction.atomic`,
+  `select_for_update`, overselling protection, `price_at_purchase` snapshots,
+  cancel endpoint, and my bookings endpoint.
+- QR ticket validation: signed QR tokens, QR image generation,
+  organizer/admin ticket usage endpoint, and repeated usage protection.
+- PDF tickets: generated after booking with event/ticket/user data and QR code,
+  secured by booking access permissions, downloadable from the API, and
+  regenerable from admin.
+
 PostgreSQL runs inside Docker Compose as `postgres`.
 Redis runs inside Docker Compose as `redis`.
 
