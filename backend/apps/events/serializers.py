@@ -132,3 +132,21 @@ class EventListSerializer(serializers.ModelSerializer):
             "is_published",
             "cover_image",
         )
+
+
+class PopularEventSerializer(serializers.ModelSerializer):
+    category_detail = EventCategorySerializer(source="category", read_only=True)
+    booking_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Event
+        fields = (
+            "id",
+            "title",
+            "slug",
+            "category_detail",
+            "location",
+            "start_datetime",
+            "booking_count",
+            "cover_image",
+        )

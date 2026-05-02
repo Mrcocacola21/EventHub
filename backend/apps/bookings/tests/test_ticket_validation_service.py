@@ -10,6 +10,7 @@ from apps.bookings.models import Booking
 from apps.bookings.qr import QRCodeService
 from apps.bookings.services import TicketValidationService
 from apps.events.models import Event, EventCategory
+from apps.notifications.models import Notification
 from apps.tickets.models import TicketType
 
 User = get_user_model()
@@ -106,6 +107,21 @@ class TicketValidationServiceTests(TestCase):
 
         self.assertTrue(used_booking.is_used)
         self.assertIsNotNone(used_booking.used_at)
+
+    def test_use_booking_creates_notification_on_commit(self):
+        booking = self.make_booking()
+
+        with self.captureOnCommitCallbacks(execute=True):
+            TicketValidationService.use_booking(booking.id, self.organizer)
+
+        self.assertTrue(
+            Notification.objects.filter(
+                user=self.owner,
+                type=Notification.Type.BOOKING_USED,
+                entity_type="Booking",
+                entity_id=str(booking.id),
+            ).exists()
+        )
 
     def test_admin_and_superuser_can_use_any_booking(self):
         admin_booking = self.make_booking()

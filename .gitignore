@@ -1,6 +1,8 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyo
+*.pyd
 *$py.class
 *.so
 .Python
@@ -26,6 +28,7 @@ pip-wheel-metadata/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+*.sqlite3
 media/
 staticfiles/
 static/
@@ -47,12 +50,18 @@ pnpm-debug.log*
 frontend/dist/
 frontend/build/
 frontend/.vite/
+dist/
+build/
+.vite/
 *.local
 
 # Environment files
 .env
 .env.*
+*.env
+backend/.env
 !.env.example
+!backend/.env.example
 
 # IDE / Editor
 .idea/
@@ -60,6 +69,8 @@ frontend/.vite/
 *.swp
 *.swo
 *~
+.DS_Store
+Thumbs.db
 
 # Cache
 .cache/
@@ -74,3 +85,6 @@ htmlcov/
 backend/staticfiles/
 backend/media/
 frontend/coverage/
+
+# Logs
+logs/

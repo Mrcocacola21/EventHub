@@ -1,116 +1,186 @@
 # EventHub
 
-EventHub is a production-ready platform for events, tickets, and tournaments.
+EventHub is a production-ready backend platform for events, tickets, and tournament-ready workflows built with Django and Django REST Framework.
 
-## Stack
+The current backend includes event management, ticket types, atomic bookings, QR/PDF ticketing, audit logs, background jobs, Redis caching, persistent notifications, and live WebSocket notifications. Tournament and review modules are scaffolded/planned, but full tournament and review business logic is not implemented yet.
 
-- Backend: Django, Django REST Framework, PostgreSQL, Redis, Celery, Channels.
-- Frontend: React, Tailwind CSS, Axios / React Query.
+## Tech Stack
+
+- Django
+- Django REST Framework
+- PostgreSQL
+- Redis
+- Celery and Celery Beat
+- Django Channels
+- SimpleJWT
+- Docker Compose
+- React frontend placeholder
+
+## Core Features
+
+- Custom user model with email login
+- JWT authentication and refresh tokens
+- Role-based access control for users, organizers, and admins
+- Event categories and event lifecycle management
+- Ticket types with availability and sales-period validation
+- Atomic booking with `transaction.atomic` and `select_for_update`
+- Overselling protection
+- QR ticket generation and validation
+- PDF ticket generation and secure download
+- Production-style Django Admin dashboard
+- Audit logs with request ID, IP address, and user-agent capture
+- Celery background tasks for emails, booking expiration, reminders, and cleanup
+- Redis caching for public events and popular events
+- Persistent user notifications
+- Django Channels WebSocket live notifications
+- Automated test coverage
+
+## API Overview
+
+```text
+GET  /api/health/
+
+POST /api/auth/register/
+POST /api/auth/login/
+POST /api/auth/refresh/
+GET  /api/users/me/
+
+GET  /api/event-categories/
+GET  /api/events/
+GET  /api/events/popular/
+POST /api/events/
+GET  /api/events/{id}/
+PATCH /api/events/{id}/
+POST /api/events/{id}/publish/
+POST /api/events/{id}/cancel/
+POST /api/events/{id}/finish/
+
+GET  /api/events/{id}/tickets/
+POST /api/events/{id}/tickets/
+
+GET  /api/bookings/
+POST /api/bookings/
+GET  /api/bookings/my/
+POST /api/bookings/{id}/cancel/
+POST /api/bookings/{id}/use/
+GET  /api/bookings/{id}/download-pdf/
+
+GET  /api/notifications/
+POST /api/notifications/{id}/read/
+POST /api/notifications/read-all/
+
+WS   /ws/notifications/?token=<access_token>
+```
+
+## Docker Usage
+
+Create the backend environment file:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Build and start the stack:
+
+```bash
+docker compose up --build
+```
+
+Run backend management commands:
+
+```bash
+docker compose exec backend python manage.py migrate
+docker compose exec backend python manage.py createsuperuser
+docker compose exec backend python manage.py test
+```
+
+The backend is available at:
+
+```text
+http://localhost:8000
+```
+
+## Testing
+
+Recommended Docker checks:
+
+```bash
+docker compose exec backend python manage.py makemigrations --check
+docker compose exec backend python manage.py check
+docker compose exec backend python manage.py test
+```
+
+Local checks can be run from `backend/` when PostgreSQL and Redis are available:
+
+```bash
+python manage.py makemigrations --check
+python manage.py check
+python manage.py test
+```
+
+## Background Services
+
+Docker Compose includes:
+
+- `backend`
+- `postgres`
+- `redis`
+- `celery_worker`
+- `celery_beat`
+
+Useful logs:
+
+```bash
+docker compose logs -f backend
+docker compose logs -f celery_worker
+docker compose logs -f celery_beat
+```
 
 ## Project Structure
 
 ```text
 Tournament/
   backend/
-    config/              # Django project configuration package
-      settings/          # Environment-specific Django settings
-    apps/                # Domain Django apps
-      users/
-      events/
-      tickets/
-      bookings/
-      tournaments/
-      reviews/
-      notifications/
+    apps/
       audit/
+      bookings/
       common/
-    manage.py            # Django management entrypoint
-    Dockerfile           # Backend container image
-    entrypoint.sh        # Backend container startup script
-    .env.example         # Example backend environment variables
-    requirements.txt     # Backend Python dependencies
+      events/
+      notifications/
+      reviews/
+      tickets/
+      tournaments/
+      users/
+    config/
+      settings/
+    manage.py
+    requirements.txt
   frontend/
-    src/
-      api/               # API clients and request helpers
-      components/        # Shared React components
-      pages/             # Route-level React pages
-      router/            # Client-side routing
-      hooks/             # Shared React hooks
-    package.json         # Frontend package manifest
-  docker-compose.yml     # Backend Docker Compose infrastructure
-  .gitignore
+  docker-compose.yml
+  README.md
 ```
 
-## Run with Docker
+## Security And Production Notes
 
-Create a backend environment file from the example:
+- Environment-based settings and secrets
+- JWT authentication with SimpleJWT
+- Role and object-level permissions
+- Server-owned booking fields protected from client overrides
+- Booking validation protected by QR tokens and permissions
+- Overselling protection with row-level locking
+- Audit logs for key business actions
+- Request ID middleware and response header
+- Read-only AuditLog admin
+- Separate static and media storage paths
+- Redis databases separated for Celery, cache, and Channels in the example env
 
-```bash
-cp backend/.env.example backend/.env
-```
-
-Build and run the backend infrastructure:
-
-```bash
-docker compose up --build
-```
-
-The backend will be available at http://localhost:8000.
-
-Health endpoint:
-
-```text
-http://localhost:8000/api/health/
-```
-
-## Backend Features
-
-- Users/Auth: email login, JWT, roles (`USER`, `ORGANIZER`, `ADMIN`), profile.
-- Events API: event categories and events with role-based access.
-- Event lifecycle: `publish`, `cancel`, and `finish` actions.
-- Events support filtering by category/status/publication/location, search by
-  title/description/location, and ordering by dates, creation time, and title.
-- TicketType: event ticket categories with availability checks, sales periods,
-  organizer/admin permissions, nested event API, and Event admin inline.
-- Bookings: atomic ticket booking with `transaction.atomic`,
-  `select_for_update`, overselling protection, `price_at_purchase` snapshots,
-  cancel endpoint, and my bookings endpoint.
-- QR ticket validation: signed QR tokens, QR image generation,
-  organizer/admin ticket usage endpoint, and repeated usage protection.
-- PDF tickets: generated after booking with event/ticket/user data and QR code,
-  secured by booking access permissions, downloadable from the API, and
-  regenerable from admin.
-
-PostgreSQL runs inside Docker Compose as `postgres`.
-Redis runs inside Docker Compose as `redis`.
-
-Useful commands:
+## Useful Commands
 
 ```bash
 docker compose exec backend python manage.py createsuperuser
+docker compose exec backend python manage.py makemigrations --check
 docker compose exec backend python manage.py check
 docker compose exec backend python manage.py test
 docker compose down
 docker compose down -v
 ```
-
-## Tests
-
-The default Django settings module is `config.settings.local`. For an explicit
-test settings run from `backend/`:
-
-```bash
-DJANGO_SETTINGS_MODULE=config.settings.test python manage.py check
-DJANGO_SETTINGS_MODULE=config.settings.test python manage.py test
-```
-
-With Docker Compose:
-
-```bash
-docker compose exec backend python manage.py check
-docker compose exec backend python manage.py test
-```
-
-This repository currently contains the base monorepo structure, backend foundation,
-and Docker Compose infrastructure for Django, PostgreSQL, and Redis. Business logic,
-models, and full API implementation will be added in later stages.

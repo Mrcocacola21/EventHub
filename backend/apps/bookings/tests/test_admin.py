@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
 from django.test import RequestFactory, TestCase
 from django.utils import timezone
 
@@ -73,12 +74,16 @@ class BookingAdminTests(TempMediaRootMixin, TestCase):
         booking_admin = admin.site._registry[Booking]
 
         for field_name in (
+            "id",
+            "user",
+            "ticket_type",
             "price_at_purchase",
             "qr_code",
             "pdf_ticket",
+            "is_used",
+            "used_at",
             "created_at",
             "updated_at",
-            "used_at",
         ):
             self.assertIn(field_name, booking_admin.readonly_fields)
 
@@ -91,11 +96,17 @@ class BookingAdminTests(TempMediaRootMixin, TestCase):
             "status",
             "price_at_purchase",
             "is_used",
-            "used_at",
             "has_qr_code",
             "has_pdf_ticket",
+            "created_at",
         ):
             self.assertIn(field_name, booking_admin.list_display)
+
+    def test_list_filter_includes_expected_fields(self):
+        booking_admin = admin.site._registry[Booking]
+
+        for field_name in ("status", "is_used", "created_at"):
+            self.assertIn(field_name, booking_admin.list_filter)
 
     def test_expected_actions_exist(self):
         booking_admin = admin.site._registry[Booking]
@@ -104,6 +115,8 @@ class BookingAdminTests(TempMediaRootMixin, TestCase):
         self.assertIn("mark_bookings_used", booking_admin.actions)
         self.assertIn("regenerate_qr_codes", booking_admin.actions)
         self.assertIn("regenerate_pdf_tickets", booking_admin.actions)
+        self.assertEqual(booking_admin.date_hierarchy, "created_at")
+        self.assertEqual(booking_admin.ordering, ("-created_at",))
 
     def test_cancel_action_uses_booking_service_effects(self):
         booking_admin = admin.site._registry[Booking]
@@ -135,6 +148,8 @@ class BookingAdminTests(TempMediaRootMixin, TestCase):
     def test_regenerate_qr_codes_action_generates_qr(self):
         booking_admin = admin.site._registry[Booking]
         booking = self.make_booking()
+        booking.qr_code.save("existing_qr.png", ContentFile(b"existing"), save=True)
+        existing_name = booking.qr_code.name
 
         booking_admin.regenerate_qr_codes(
             self.request(),
@@ -143,10 +158,17 @@ class BookingAdminTests(TempMediaRootMixin, TestCase):
 
         booking.refresh_from_db()
         self.assertTrue(booking.qr_code)
+        self.assertNotEqual(booking.qr_code.name, existing_name)
 
     def test_regenerate_pdf_tickets_action_generates_pdf(self):
         booking_admin = admin.site._registry[Booking]
         booking = self.make_booking()
+        booking.pdf_ticket.save(
+            "existing_ticket.pdf",
+            ContentFile(b"%PDF existing"),
+            save=True,
+        )
+        existing_name = booking.pdf_ticket.name
 
         booking_admin.regenerate_pdf_tickets(
             self.request(),
@@ -155,6 +177,7 @@ class BookingAdminTests(TempMediaRootMixin, TestCase):
 
         booking.refresh_from_db()
         self.assertTrue(booking.pdf_ticket)
+        self.assertNotEqual(booking.pdf_ticket.name, existing_name)
 
     def test_has_pdf_ticket_reflects_file_presence(self):
         booking_admin = admin.site._registry[Booking]

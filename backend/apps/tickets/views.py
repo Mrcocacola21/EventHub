@@ -1,9 +1,11 @@
+from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from apps.events.cache import EventCacheService
 from apps.events.models import Event
 
 from .models import TicketType
@@ -64,6 +66,18 @@ class TicketTypeViewSet(viewsets.ModelViewSet):
         if self.kwargs.get("event_id") is not None:
             context["event"] = self.get_event()
         return context
+
+    def perform_create(self, serializer):
+        serializer.save()
+        transaction.on_commit(EventCacheService.invalidate_events_cache)
+
+    def perform_update(self, serializer):
+        serializer.save()
+        transaction.on_commit(EventCacheService.invalidate_events_cache)
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        transaction.on_commit(EventCacheService.invalidate_events_cache)
 
     def destroy(self, request, *args, **kwargs):
         ticket_type = self.get_object()

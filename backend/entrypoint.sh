@@ -12,8 +12,9 @@ done
 
 echo "PostgreSQL is available"
 
-python manage.py migrate
-python manage.py collectstatic --noinput
+if [ "${SKIP_DJANGO_MAINTENANCE:-0}" != "1" ]; then
+  python manage.py migrate
+  python manage.py collectstatic --noinput
+fi
 
 exec "$@"
-

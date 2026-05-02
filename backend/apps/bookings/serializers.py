@@ -73,4 +73,5 @@ class BookingCreateSerializer(serializers.Serializer):
         return BookingService.create_booking(
             user=request.user,
             ticket_type_id=validated_data["ticket_type_id"],
+            request=request,
         )

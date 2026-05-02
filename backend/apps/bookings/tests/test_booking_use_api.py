@@ -9,6 +9,7 @@ from rest_framework.test import APITestCase
 
 from apps.bookings.models import Booking
 from apps.events.models import Event, EventCategory
+from apps.notifications.models import Notification
 from apps.tickets.models import TicketType
 
 User = get_user_model()
@@ -119,7 +120,8 @@ class BookingUseApiTests(APITestCase):
         booking = self.make_booking()
         self.client.force_authenticate(self.organizer)
 
-        response = self.client.post(self.use_url(booking))
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(self.use_url(booking))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         booking.refresh_from_db()
@@ -127,6 +129,14 @@ class BookingUseApiTests(APITestCase):
         self.assertIsNotNone(booking.used_at)
         self.assertTrue(response.data["is_used"])
         self.assertIsNotNone(response.data["used_at"])
+        self.assertTrue(
+            Notification.objects.filter(
+                user=self.owner,
+                type=Notification.Type.BOOKING_USED,
+                entity_type="Booking",
+                entity_id=str(booking.id),
+            ).exists()
+        )
 
     def test_admin_can_use_booking(self):
         booking = self.make_booking()

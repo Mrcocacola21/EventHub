@@ -35,6 +35,10 @@ class TicketTypeAdminTests(TestCase):
             title="Canceled Event",
             status=Event.Status.CANCELED,
         )
+        cls.finished_event = cls.make_event(
+            title="Finished Event",
+            status=Event.Status.FINISHED,
+        )
 
     @classmethod
     def make_event(cls, **overrides):
@@ -79,6 +83,8 @@ class TicketTypeAdminTests(TestCase):
         ticket_type_admin = admin.site._registry[TicketType]
 
         self.assertIn("sold_count", ticket_type_admin.readonly_fields)
+        self.assertIn("created_at", ticket_type_admin.readonly_fields)
+        self.assertIn("updated_at", ticket_type_admin.readonly_fields)
 
     def test_ticket_type_admin_configuration_exposes_expected_controls(self):
         ticket_type_admin = admin.site._registry[TicketType]
@@ -89,15 +95,27 @@ class TicketTypeAdminTests(TestCase):
             "price",
             "quantity",
             "sold_count",
+            "available_quantity_display",
             "is_active",
         ):
             self.assertIn(field_name, ticket_type_admin.list_display)
 
         self.assertIn("is_active", ticket_type_admin.list_filter)
+        self.assertIn("event__status", ticket_type_admin.list_filter)
         self.assertIn("name", ticket_type_admin.search_fields)
         self.assertIn("event__title", ticket_type_admin.search_fields)
+        self.assertIn("event__organizer__email", ticket_type_admin.search_fields)
         self.assertIn("deactivate_ticket_types", ticket_type_admin.actions)
         self.assertIn("activate_ticket_types", ticket_type_admin.actions)
+        self.assertEqual(
+            ticket_type_admin.list_select_related,
+            ("event", "event__organizer", "event__category"),
+        )
+        self.assertEqual(ticket_type_admin.date_hierarchy, "created_at")
+        self.assertEqual(
+            ticket_type_admin.ordering,
+            ("event__start_datetime", "price", "name"),
+        )
 
     def test_admin_actions_deactivate_and_activate_ticket_types(self):
         ticket_type_admin = admin.site._registry[TicketType]
@@ -108,6 +126,11 @@ class TicketTypeAdminTests(TestCase):
             name="Canceled",
             is_active=False,
         )
+        finished = self.make_ticket_type(
+            event=self.finished_event,
+            name="Finished",
+            is_active=False,
+        )
 
         ticket_type_admin.deactivate_ticket_types(
             self.request(),
@@ -115,12 +138,14 @@ class TicketTypeAdminTests(TestCase):
         )
         ticket_type_admin.activate_ticket_types(
             self.request(),
-            TicketType.objects.filter(id__in=(inactive.id, canceled.id)),
+            TicketType.objects.filter(id__in=(inactive.id, canceled.id, finished.id)),
         )
 
         active.refresh_from_db()
         inactive.refresh_from_db()
         canceled.refresh_from_db()
+        finished.refresh_from_db()
         self.assertFalse(active.is_active)
         self.assertTrue(inactive.is_active)
         self.assertFalse(canceled.is_active)
+        self.assertFalse(finished.is_active)

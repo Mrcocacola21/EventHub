@@ -19,6 +19,7 @@ class CustomUserCreationForm(forms.ModelForm):
             "role",
             "is_verified",
             "is_staff",
+            "is_superuser",
             "is_active",
         )
 
@@ -47,4 +48,3 @@ class CustomUserChangeForm(forms.ModelForm):
     class Meta:
         model = User
         fields = "__all__"
-

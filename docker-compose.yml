@@ -14,6 +14,12 @@ services:
     depends_on:
       - postgres
       - redis
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/', timeout=5)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   postgres:
     image: postgres:16-alpine
@@ -32,6 +38,46 @@ services:
     container_name: eventhub_redis
     ports:
       - "6379:6379"
+
+  celery_worker:
+    build: ./backend
+    container_name: eventhub_celery_worker
+    command: celery -A config worker -l info
+    volumes:
+      - ./backend:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    env_file:
+      - ./backend/.env
+    environment:
+      SKIP_DJANGO_MAINTENANCE: "1"
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_started
+
+  celery_beat:
+    build: ./backend
+    container_name: eventhub_celery_beat
+    command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - ./backend:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    env_file:
+      - ./backend/.env
+    environment:
+      SKIP_DJANGO_MAINTENANCE: "1"
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_started
 
 volumes:
   postgres_data:

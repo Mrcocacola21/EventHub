@@ -1,4 +1,5 @@
 from datetime import timedelta
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -6,7 +7,10 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from apps.bookings.models import Booking
 from apps.events.models import Event, EventCategory
+from apps.notifications.models import Notification
+from apps.tickets.models import TicketType
 
 User = get_user_model()
 
@@ -327,12 +331,35 @@ class EventApiTests(APITestCase):
             organizer=self.organizer,
             status=Event.Status.PUBLISHED,
         )
+        ticket_type = TicketType.objects.create(
+            event=event,
+            name="Standard",
+            price=Decimal("10.00"),
+            quantity=10,
+            sold_count=1,
+        )
+        booking = Booking.objects.create(
+            user=self.regular_user,
+            ticket_type=ticket_type,
+            status=Booking.Status.PAID,
+            price_at_purchase=ticket_type.price,
+        )
 
-        response = self.client.post(self.action_url(event, "cancel"))
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(self.action_url(event, "cancel"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], Event.Status.CANCELED)
         self.assertFalse(response.data["is_published"])
+        self.assertTrue(
+            Notification.objects.filter(
+                user=self.regular_user,
+                type=Notification.Type.EVENT_CANCELED,
+                entity_type="Event",
+                entity_id=str(event.id),
+                metadata__event_id=event.id,
+            ).exists()
+        )
 
     def test_finish_action_sets_status_and_publication_flag(self):
         self.client.force_authenticate(self.organizer)

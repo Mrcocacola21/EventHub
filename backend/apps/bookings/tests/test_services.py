@@ -11,6 +11,7 @@ from apps.bookings.models import Booking
 from apps.bookings.services import BookingService
 from apps.bookings.tests.utils import TempMediaRootMixin
 from apps.events.models import Event, EventCategory
+from apps.notifications.models import Notification
 from apps.tickets.models import TicketType
 
 User = get_user_model()
@@ -118,6 +119,20 @@ class BookingServiceTests(TempMediaRootMixin, TestCase):
         self.assertTrue(booking.pdf_ticket)
         self.assertEqual(ticket_type.sold_count, 1)
 
+    def test_create_booking_creates_notification_on_commit(self):
+        ticket_type = self.make_ticket_type()
+
+        with self.captureOnCommitCallbacks(execute=True):
+            booking = BookingService.create_booking(self.user, ticket_type.id)
+
+        notification = Notification.objects.get(
+            user=self.user,
+            type=Notification.Type.BOOKING_CREATED,
+            entity_type="Booking",
+            entity_id=str(booking.id),
+        )
+        self.assertEqual(notification.metadata["booking_id"], booking.id)
+
     def test_anonymous_user_cannot_create_booking(self):
         ticket_type = self.make_ticket_type()
 
@@ -206,6 +221,21 @@ class BookingServiceTests(TempMediaRootMixin, TestCase):
         booking.refresh_from_db()
         self.assertEqual(canceled.status, Booking.Status.CANCELED)
         self.assertEqual(booking.status, Booking.Status.CANCELED)
+
+    def test_cancel_booking_creates_notification_on_commit(self):
+        booking = self.make_booking()
+
+        with self.captureOnCommitCallbacks(execute=True):
+            BookingService.cancel_booking(booking, self.user)
+
+        self.assertTrue(
+            Notification.objects.filter(
+                user=self.user,
+                type=Notification.Type.BOOKING_CANCELED,
+                entity_type="Booking",
+                entity_id=str(booking.id),
+            ).exists()
+        )
 
     def test_admin_can_cancel_any_booking(self):
         booking = self.make_booking(user=self.another_user)

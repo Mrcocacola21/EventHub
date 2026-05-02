@@ -10,6 +10,7 @@ from rest_framework.test import APITestCase
 from apps.bookings.models import Booking
 from apps.bookings.tests.utils import TempMediaRootMixin
 from apps.events.models import Event, EventCategory
+from apps.notifications.models import Notification
 from apps.tickets.models import TicketType
 
 User = get_user_model()
@@ -131,17 +132,26 @@ class BookingApiTests(TempMediaRootMixin, APITestCase):
         self.client.force_authenticate(self.user)
         ticket_type = self.make_ticket_type()
 
-        response = self.client.post(
-            reverse("booking-list"),
-            {"ticket_type_id": ticket_type.id},
-            format="json",
-        )
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                reverse("booking-list"),
+                {"ticket_type_id": ticket_type.id},
+                format="json",
+            )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         ticket_type.refresh_from_db()
         self.assertEqual(response.data["user"], self.user.id)
         self.assertEqual(response.data["status"], Booking.Status.PAID)
         self.assertEqual(ticket_type.sold_count, 1)
+        self.assertTrue(
+            Notification.objects.filter(
+                user=self.user,
+                type=Notification.Type.BOOKING_CREATED,
+                entity_type="Booking",
+                entity_id=str(response.data["id"]),
+            ).exists()
+        )
 
     def test_user_and_server_fields_cannot_be_overridden_on_create(self):
         self.client.force_authenticate(self.user)
@@ -323,13 +333,22 @@ class BookingApiTests(TempMediaRootMixin, APITestCase):
         booking = self.make_booking(user=self.user, ticket_type=ticket_type)
         self.client.force_authenticate(self.user)
 
-        response = self.client.post(reverse("booking-cancel", args=[booking.id]))
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(reverse("booking-cancel", args=[booking.id]))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         booking.refresh_from_db()
         ticket_type.refresh_from_db()
         self.assertEqual(booking.status, Booking.Status.CANCELED)
         self.assertEqual(ticket_type.sold_count, 0)
+        self.assertTrue(
+            Notification.objects.filter(
+                user=self.user,
+                type=Notification.Type.BOOKING_CANCELED,
+                entity_type="Booking",
+                entity_id=str(booking.id),
+            ).exists()
+        )
 
     def test_admin_can_cancel_booking(self):
         booking = self.make_booking(user=self.user)

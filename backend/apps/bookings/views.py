@@ -82,7 +82,11 @@ class BookingViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def cancel(self, request, *args, **kwargs):
         booking = self.get_object()
-        booking = BookingService.cancel_booking(booking=booking, user=request.user)
+        booking = BookingService.cancel_booking(
+            booking=booking,
+            user=request.user,
+            request=request,
+        )
         serializer = BookingSerializer(
             booking,
             context=self.get_serializer_context(),
@@ -95,6 +99,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking = TicketValidationService.use_booking(
             booking_id=booking.id,
             checked_by_user=request.user,
+            request=request,
         )
         serializer = BookingSerializer(
             booking,
