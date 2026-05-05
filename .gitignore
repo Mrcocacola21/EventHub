@@ -23,12 +23,14 @@ pip-wheel-metadata/
 .installed.cfg
 *.egg
 
-# Django
+# Django / media / static output
 *.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
 *.sqlite3
+backend/media/
+backend/staticfiles/
 media/
 staticfiles/
 static/
@@ -60,8 +62,10 @@ build/
 .env.*
 *.env
 backend/.env
+frontend/.env
 !.env.example
 !backend/.env.example
+!frontend/.env.example
 
 # IDE / Editor
 .idea/
@@ -84,8 +88,6 @@ coverage/
 htmlcov/
 
 # Build artifacts
-backend/staticfiles/
-backend/media/
 frontend/coverage/
 
 # Logs
