@@ -14,7 +14,10 @@ The current backend includes event management, ticket types, atomic bookings, QR
 - Django Channels
 - SimpleJWT
 - Docker Compose
-- React frontend placeholder
+- React
+- Vite
+- Tailwind CSS
+- React Query
 
 ## Core Features
 
@@ -179,6 +182,91 @@ The backend is available at:
 http://localhost:8000
 ```
 
+## Frontend Usage
+
+Create the frontend environment file:
+
+```bash
+cd frontend
+cp .env.example .env
+```
+
+Install dependencies and run the Vite dev server:
+
+```bash
+npm install
+npm run dev
+```
+
+Build the production bundle:
+
+```bash
+npm run build
+```
+
+The frontend is available at:
+
+```text
+http://localhost:5173
+```
+
+The default frontend environment points to:
+
+```text
+Backend API: http://localhost:8000/api
+WebSocket:   ws://localhost:8000/ws
+```
+
+Implemented frontend foundation:
+
+- React, Vite, Tailwind CSS, Axios, and React Query
+- JWT auth with access token refresh
+- Protected routes and role-based organizer/admin routes
+- Shared layout, navigation, reusable UI components, and API modules
+
+Implemented frontend user-facing flows:
+
+- Events list with filters and pagination support
+- Event details with ticket types
+- Auth-aware ticket booking
+- My bookings list with status filtering
+- Booking details page
+- QR code display
+- PDF ticket download
+- Booking cancellation for eligible bookings
+
+Implemented organizer dashboard flows:
+
+- Organizer/admin dashboard with event summary
+- Create and edit events
+- Publish, cancel, and finish events
+- Manage ticket types for an event
+- View event bookings with status, usage, and user filters
+- Download booking PDF tickets from organizer booking lists
+- Validate tickets by manual booking ID entry
+- Organizer tournament list, creation, and management
+- Open tournament registration, start tournaments, and cancel tournaments
+- Submit match results from the organizer bracket view
+
+Implemented tournament flows:
+
+- Public tournaments list with status, type, and search filters
+- Tournament details with participant registration
+- Participant list
+- Single-elimination bracket visualization
+- Match winner highlighting and BYE handling
+- Notification WebSocket hook that refreshes tournament, bracket, match, and
+  notification queries for tournament-related notifications
+
+Manual booking ID validation is available in the organizer QR Check page.
+Camera QR scanning is planned for a later stage when a frontend scanner and
+backend token validation endpoint are connected.
+
+Tournament live updates currently use the existing notification WebSocket
+(`ws://localhost:8000/ws/notifications/?token=<access_token>`) to refresh data.
+There is no custom tournament room WebSocket yet, no drag-and-drop bracket
+editing, and tournament support is currently single-elimination only.
+
 ## Testing
 
 Django test runner:
@@ -254,6 +342,15 @@ Tournament/
     manage.py
     requirements.txt
   frontend/
+    src/
+      api/
+      app/
+      components/
+      hooks/
+      pages/
+      router/
+      store/
+      utils/
   docker-compose.yml
   README.md
 ```
