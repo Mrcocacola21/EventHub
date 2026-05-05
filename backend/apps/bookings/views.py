@@ -1,5 +1,12 @@
 from django.http import FileResponse
 from django.db.models import Q
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -12,6 +19,27 @@ from .serializers import BookingCreateSerializer, BookingSerializer
 from .services import BookingService, TicketValidationService
 
 
+@extend_schema_view(
+    list=extend_schema(tags=["Bookings"], summary="List accessible bookings"),
+    create=extend_schema(
+        tags=["Bookings"],
+        summary="Create booking",
+        description=(
+            "Creates a booking atomically. sold_count, price_at_purchase, QR code "
+            "and PDF ticket are generated server-side."
+        ),
+        request=BookingCreateSerializer,
+        responses=BookingSerializer,
+        examples=[
+            OpenApiExample(
+                "Create booking",
+                value={"ticket_type_id": 1},
+                request_only=True,
+            ),
+        ],
+    ),
+    retrieve=extend_schema(tags=["Bookings"], summary="Get booking"),
+)
 class BookingViewSet(viewsets.ModelViewSet):
     http_method_names = ("get", "post", "head", "options")
 
@@ -23,15 +51,17 @@ class BookingViewSet(viewsets.ModelViewSet):
             "ticket_type__event__organizer",
             "ticket_type__event__category",
         )
+        if getattr(self, "swagger_fake_view", False):
+            return queryset.none()
 
         if self.action in ("retrieve", "cancel", "use", "download_pdf"):
             return queryset
 
         user = self.request.user
-        if user.is_superuser or user.is_admin_role:
+        if user.is_superuser or getattr(user, "is_admin_role", False):
             return queryset
 
-        if user.is_organizer:
+        if getattr(user, "is_organizer", False):
             return queryset.filter(
                 Q(user=user) | Q(ticket_type__event__organizer=user)
             )
@@ -60,6 +90,11 @@ class BookingViewSet(viewsets.ModelViewSet):
         )
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(
+        tags=["Bookings"],
+        summary="List current user's bookings",
+        responses=BookingSerializer(many=True),
+    )
     @action(detail=False, methods=["get"], url_path="my")
     def my(self, request, *args, **kwargs):
         queryset = self.get_queryset().filter(user=request.user)
@@ -79,6 +114,12 @@ class BookingViewSet(viewsets.ModelViewSet):
         )
         return Response(serializer.data)
 
+    @extend_schema(
+        tags=["Bookings"],
+        summary="Cancel booking",
+        request=None,
+        responses=BookingSerializer,
+    )
     @action(detail=True, methods=["post"])
     def cancel(self, request, *args, **kwargs):
         booking = self.get_object()
@@ -93,6 +134,13 @@ class BookingViewSet(viewsets.ModelViewSet):
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        tags=["Bookings"],
+        summary="Use/validate booking ticket",
+        description="Only event organizer/admin can validate a paid, unused booking.",
+        request=None,
+        responses=BookingSerializer,
+    )
     @action(detail=True, methods=["post"])
     def use(self, request, *args, **kwargs):
         booking = self.get_object()
@@ -107,6 +155,16 @@ class BookingViewSet(viewsets.ModelViewSet):
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        tags=["Bookings"],
+        summary="Download PDF ticket",
+        responses={
+            200: OpenApiResponse(
+                response=OpenApiTypes.BINARY,
+                description="PDF ticket file (application/pdf).",
+            )
+        },
+    )
     @action(detail=True, methods=["get"], url_path="download-pdf")
     def download_pdf(self, request, *args, **kwargs):
         booking = self.get_object()

@@ -1,8 +1,8 @@
 # EventHub
 
-EventHub is a production-ready backend platform for events, tickets, and tournament-ready workflows built with Django and Django REST Framework.
+EventHub is a production-ready backend platform for events, tickets, and tournament workflows built with Django and Django REST Framework.
 
-The current backend includes event management, ticket types, atomic bookings, QR/PDF ticketing, audit logs, background jobs, Redis caching, persistent notifications, and live WebSocket notifications. Tournament and review modules are scaffolded/planned, but full tournament and review business logic is not implemented yet.
+The current backend includes event management, ticket types, atomic bookings, QR/PDF ticketing, a single-elimination tournament engine, event reviews, audit logs, background jobs, Redis caching, persistent notifications, and live WebSocket notifications.
 
 ## Tech Stack
 
@@ -27,6 +27,8 @@ The current backend includes event management, ticket types, atomic bookings, QR
 - Overselling protection
 - QR ticket generation and validation
 - PDF ticket generation and secure download
+- Tournament engine with single-elimination brackets, participant registration, byes, winner promotion, match result submission, and automatic tournament finish
+- Event reviews with one review per paid attendee, 1-5 ratings, average rating annotations, and admin moderation
 - Production-style Django Admin dashboard
 - Audit logs with request ID, IP address, and user-agent capture
 - Celery background tasks for emails, booking expiration, reminders, and cleanup
@@ -39,6 +41,9 @@ The current backend includes event management, ticket types, atomic bookings, QR
 
 ```text
 GET  /api/health/
+GET  /api/schema/
+GET  /api/docs/
+GET  /api/redoc/
 
 POST /api/auth/register/
 POST /api/auth/login/
@@ -58,6 +63,28 @@ POST /api/events/{id}/finish/
 GET  /api/events/{id}/tickets/
 POST /api/events/{id}/tickets/
 
+GET  /api/events/{id}/reviews/
+POST /api/events/{id}/reviews/
+GET  /api/reviews/{id}/
+PATCH /api/reviews/{id}/
+DELETE /api/reviews/{id}/
+
+GET  /api/tournaments/
+POST /api/tournaments/
+GET  /api/tournaments/{id}/
+PATCH /api/tournaments/{id}/
+DELETE /api/tournaments/{id}/
+POST /api/tournaments/{id}/open-registration/
+POST /api/tournaments/{id}/cancel/
+POST /api/tournaments/{id}/register/
+POST /api/tournaments/{id}/start/
+GET  /api/tournaments/{id}/bracket/
+GET  /api/tournaments/{id}/participants/
+POST /api/tournaments/{id}/participants/
+GET  /api/tournaments/{id}/matches/
+GET  /api/matches/{id}/
+POST /api/matches/{id}/result/
+
 GET  /api/bookings/
 POST /api/bookings/
 GET  /api/bookings/my/
@@ -70,6 +97,58 @@ POST /api/notifications/{id}/read/
 POST /api/notifications/read-all/
 
 WS   /ws/notifications/?token=<access_token>
+```
+
+## API Documentation
+
+OpenAPI documentation is available at:
+
+```text
+GET /api/schema/
+GET /api/docs/
+GET /api/redoc/
+```
+
+Swagger UI supports JWT Bearer authorization through the `Authorize` button.
+OpenAPI does not model WebSocket traffic well, so live notifications are documented here:
+
+```text
+ws://localhost:8000/ws/notifications/?token=<access_token>
+```
+
+Client ping:
+
+```json
+{
+  "type": "ping"
+}
+```
+
+Server pong:
+
+```json
+{
+  "type": "pong"
+}
+```
+
+Notification payload:
+
+```json
+{
+  "type": "notification",
+  "notification": {
+    "id": 1,
+    "type": "BOOKING_CREATED",
+    "title": "Ticket booked",
+    "message": "...",
+    "is_read": false,
+    "entity_type": "Booking",
+    "entity_id": "1",
+    "metadata": {},
+    "created_at": "..."
+  }
+}
 ```
 
 ## Docker Usage
@@ -102,12 +181,25 @@ http://localhost:8000
 
 ## Testing
 
-Recommended Docker checks:
+Django test runner:
 
 ```bash
 docker compose exec backend python manage.py makemigrations --check
 docker compose exec backend python manage.py check
 docker compose exec backend python manage.py test
+```
+
+Pytest:
+
+```bash
+docker compose exec backend pytest
+```
+
+Coverage:
+
+```bash
+docker compose exec backend pytest --cov=apps --cov=config --cov-report=term-missing
+docker compose exec backend pytest --cov=apps --cov=config --cov-report=html
 ```
 
 Local checks can be run from `backend/` when PostgreSQL and Redis are available:
@@ -116,7 +208,13 @@ Local checks can be run from `backend/` when PostgreSQL and Redis are available:
 python manage.py makemigrations --check
 python manage.py check
 python manage.py test
+pytest
+pytest --cov=apps --cov=config --cov-report=term-missing
 ```
+
+Pytest uses `config.settings.test`. Celery tasks run eagerly, cache uses locmem,
+Channels uses the in-memory channel layer, and QR/PDF tests use a temporary
+`MEDIA_ROOT`.
 
 ## Background Services
 
@@ -167,12 +265,15 @@ Tournament/
 - Role and object-level permissions
 - Server-owned booking fields protected from client overrides
 - Booking validation protected by QR tokens and permissions
+- Tournament organizer/admin permissions for tournament management
+- Review creation restricted to paid attendees, with published reviews used for event rating summaries
 - Overselling protection with row-level locking
 - Audit logs for key business actions
 - Request ID middleware and response header
 - Read-only AuditLog admin
 - Separate static and media storage paths
 - Redis databases separated for Celery, cache, and Channels in the example env
+- Tournament support is currently single-elimination only; double-elimination and round-robin formats are not implemented
 
 ## Useful Commands
 

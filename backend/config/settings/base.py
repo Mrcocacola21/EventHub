@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "channels",
     "rest_framework",
     "rest_framework_simplejwt",
+    "drf_spectacular",
     "django_filters",
     "corsheaders",
     "django_celery_beat",
@@ -46,8 +47,8 @@ INSTALLED_APPS = [
     "apps.events.apps.EventsConfig",
     "apps.tickets.apps.TicketsConfig",
     "apps.bookings.apps.BookingsConfig",
-    "apps.tournaments",
-    "apps.reviews",
+    "apps.tournaments.apps.TournamentsConfig",
+    "apps.reviews.apps.ReviewsConfig",
     "apps.notifications.apps.NotificationsConfig",
     "apps.audit.apps.AuditConfig",
     "apps.common",
@@ -128,6 +129,50 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "EventHub API",
+    "DESCRIPTION": (
+        "Production-ready API for events, ticket booking, QR validation, "
+        "PDF tickets, tournaments, reviews, notifications and real-time features."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": "/api/",
+    "TAGS": [
+        {"name": "Health", "description": "Service health checks."},
+        {"name": "Auth", "description": "JWT registration, login and token refresh."},
+        {"name": "Users", "description": "Current user and profile endpoints."},
+        {
+            "name": "Events",
+            "description": "Event categories, event management and public browsing.",
+        },
+        {"name": "Tickets", "description": "Ticket types and availability."},
+        {
+            "name": "Bookings",
+            "description": (
+                "Atomic ticket booking, cancellation, QR validation and PDF download."
+            ),
+        },
+        {
+            "name": "Tournaments",
+            "description": (
+                "Tournament registration, bracket generation and match results."
+            ),
+        },
+        {"name": "Reviews", "description": "Event reviews and rating aggregation."},
+        {"name": "Notifications", "description": "Persistent user notifications."},
+    ],
+    "ENUM_NAME_OVERRIDES": {
+        "BookingStatusEnum": "apps.bookings.models.Booking.Status",
+        "EventStatusEnum": "apps.events.models.Event.Status",
+        "TournamentStatusEnum": "apps.tournaments.models.Tournament.Status",
+        "ParticipantStatusEnum": "apps.tournaments.models.Participant.Status",
+        "MatchStatusEnum": "apps.tournaments.models.Match.Status",
+    },
 }
 
 SIMPLE_JWT = {

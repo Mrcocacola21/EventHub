@@ -1,0 +1,18 @@
+[run]
+source = apps,config
+omit =
+    */migrations/*
+    */tests/*
+    */venv/*
+    */.venv/*
+    manage.py
+    config/settings/*
+    */admin.py
+
+[report]
+show_missing = True
+skip_covered = True
+fail_under = 75
+
+[html]
+directory = htmlcov

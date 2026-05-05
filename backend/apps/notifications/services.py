@@ -178,18 +178,126 @@ class NotificationService:
             return None
 
     @classmethod
-    def notify_match_started(cls, match):
-        """Placeholder for tournament match notifications after Match exists."""
-        if match is None:
+    def notify_review_created(cls, review):
+        try:
+            return cls.create_notification(
+                user=review.event.organizer,
+                type=Notification.Type.REVIEW_CREATED,
+                title="New event review",
+                message=f"New review for {review.event.title}: {review.rating}/5.",
+                entity_type="Review",
+                entity_id=review.id,
+                metadata={
+                    "review_id": review.id,
+                    "event_id": review.event_id,
+                    "rating": review.rating,
+                    "user_id": review.user_id,
+                    "event_title": review.event.title,
+                },
+            )
+        except Exception:
+            logger.exception("Failed to create review created notification.")
             return None
-        return None
+
+    @classmethod
+    def notify_match_started(cls, match):
+        try:
+            if match is None:
+                return []
+
+            notifications = []
+            for participant in (match.player1, match.player2):
+                if participant is None:
+                    continue
+                notification = cls.create_notification(
+                    user=participant.user,
+                    type=Notification.Type.MATCH_STARTED,
+                    title="Match ready",
+                    message=(
+                        f"Your match in {match.tournament.title} is ready."
+                    ),
+                    entity_type="Match",
+                    entity_id=match.id,
+                    metadata=cls._match_metadata(match),
+                )
+                if notification is not None:
+                    notifications.append(notification)
+            return notifications
+        except Exception:
+            logger.exception("Failed to create match started notifications.")
+            return []
 
     @classmethod
     def notify_match_result_updated(cls, match):
-        """Placeholder for tournament result notifications after Match exists."""
-        if match is None:
+        try:
+            if match is None:
+                return []
+
+            notifications = []
+            for participant in (match.player1, match.player2):
+                if participant is None:
+                    continue
+                result = "won" if participant.id == match.winner_id else "lost"
+                notification = cls.create_notification(
+                    user=participant.user,
+                    type=Notification.Type.MATCH_RESULT_UPDATED,
+                    title="Match result updated",
+                    message=(
+                        f"You {result} match R{match.round} M{match.position} "
+                        f"in {match.tournament.title}."
+                    ),
+                    entity_type="Match",
+                    entity_id=match.id,
+                    metadata=cls._match_metadata(match),
+                )
+                if notification is not None:
+                    notifications.append(notification)
+            return notifications
+        except Exception:
+            logger.exception("Failed to create match result notifications.")
+            return []
+
+    @classmethod
+    def notify_tournament_started(cls, tournament):
+        try:
+            notifications = []
+            participants = tournament.participants.select_related("user")
+            for participant in participants:
+                notification = cls.create_notification(
+                    user=participant.user,
+                    type=Notification.Type.TOURNAMENT_STARTED,
+                    title="Tournament started",
+                    message=f"{tournament.title} has started.",
+                    entity_type="Tournament",
+                    entity_id=tournament.id,
+                    metadata=cls._tournament_metadata(tournament),
+                )
+                if notification is not None:
+                    notifications.append(notification)
+            return notifications
+        except Exception:
+            logger.exception("Failed to create tournament started notifications.")
+            return []
+
+    @classmethod
+    def notify_tournament_finished(cls, tournament, winner):
+        try:
+            return cls.create_notification(
+                user=winner.user,
+                type=Notification.Type.TOURNAMENT_FINISHED,
+                title="Tournament finished",
+                message=f"You won {tournament.title}.",
+                entity_type="Tournament",
+                entity_id=tournament.id,
+                metadata={
+                    **cls._tournament_metadata(tournament),
+                    "winner_id": winner.id,
+                    "winner_user_id": winner.user_id,
+                },
+            )
+        except Exception:
+            logger.exception("Failed to create tournament finished notification.")
             return None
-        return None
 
     @staticmethod
     def _booking_metadata(booking):
@@ -200,6 +308,29 @@ class NotificationService:
             "ticket_type_id": booking.ticket_type_id,
             "price_at_purchase": str(booking.price_at_purchase),
             "event_title": event.title,
+        }
+
+    @staticmethod
+    def _tournament_metadata(tournament):
+        return {
+            "tournament_id": tournament.id,
+            "event_id": tournament.event_id,
+            "title": tournament.title,
+            "status": tournament.status,
+        }
+
+    @classmethod
+    def _match_metadata(cls, match):
+        return {
+            "match_id": match.id,
+            "tournament_id": match.tournament_id,
+            "event_id": match.tournament.event_id,
+            "round": match.round,
+            "position": match.position,
+            "player1_id": match.player1_id,
+            "player2_id": match.player2_id,
+            "winner_id": match.winner_id,
+            "tournament_title": match.tournament.title,
         }
 
     @classmethod

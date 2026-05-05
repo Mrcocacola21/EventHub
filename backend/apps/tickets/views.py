@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import OpenApiExample, extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -13,6 +14,31 @@ from .permissions import IsEventOrganizerOrAdminForTicketType
 from .serializers import TicketTypeSerializer
 
 
+@extend_schema_view(
+    list=extend_schema(tags=["Tickets"], summary="List event ticket types"),
+    create=extend_schema(
+        tags=["Tickets"],
+        summary="Create ticket type",
+        examples=[
+            OpenApiExample(
+                "Create ticket type",
+                value={
+                    "name": "Standard",
+                    "description": "Regular ticket",
+                    "price": "25.00",
+                    "quantity": 100,
+                    "sales_start": "2026-10-01T00:00:00Z",
+                    "sales_end": "2026-11-30T23:59:59Z",
+                    "is_active": True,
+                },
+                request_only=True,
+            ),
+        ],
+    ),
+    retrieve=extend_schema(tags=["Tickets"], summary="Get ticket type"),
+    partial_update=extend_schema(tags=["Tickets"], summary="Update ticket type"),
+    destroy=extend_schema(tags=["Tickets"], summary="Delete ticket type"),
+)
 class TicketTypeViewSet(viewsets.ModelViewSet):
     serializer_class = TicketTypeSerializer
     permission_classes = (AllowAny,)

@@ -16,6 +16,24 @@ class AuditLog(models.Model):
         BOOKING_EXPIRED = "BOOKING_EXPIRED", "Booking expired"
         BOOKING_USED = "BOOKING_USED", "Booking used"
         EVENT_REMINDER_SENT = "EVENT_REMINDER_SENT", "Event reminder sent"
+        TOURNAMENT_CREATED = "TOURNAMENT_CREATED", "Tournament created"
+        TOURNAMENT_PARTICIPANT_REGISTERED = (
+            "TOURNAMENT_PARTICIPANT_REGISTERED",
+            "Tournament participant registered",
+        )
+        TOURNAMENT_REGISTRATION_OPENED = (
+            "TOURNAMENT_REGISTRATION_OPENED",
+            "Tournament registration opened",
+        )
+        TOURNAMENT_STARTED = "TOURNAMENT_STARTED", "Tournament started"
+        TOURNAMENT_FINISHED = "TOURNAMENT_FINISHED", "Tournament finished"
+        TOURNAMENT_CANCELED = "TOURNAMENT_CANCELED", "Tournament canceled"
+        MATCH_RESULT_SUBMITTED = "MATCH_RESULT_SUBMITTED", "Match result submitted"
+        REVIEW_CREATED = "REVIEW_CREATED", "Review created"
+        REVIEW_UPDATED = "REVIEW_UPDATED", "Review updated"
+        REVIEW_DELETED = "REVIEW_DELETED", "Review deleted"
+        REVIEW_PUBLISHED = "REVIEW_PUBLISHED", "Review published"
+        REVIEW_UNPUBLISHED = "REVIEW_UNPUBLISHED", "Review unpublished"
         QR_REGENERATED = "QR_REGENERATED", "QR regenerated"
         PDF_REGENERATED = "PDF_REGENERATED", "PDF regenerated"
 

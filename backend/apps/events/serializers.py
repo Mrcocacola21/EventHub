@@ -1,4 +1,6 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.users.serializers import UserShortSerializer
@@ -27,6 +29,8 @@ class EventSerializer(serializers.ModelSerializer):
     category_detail = EventCategorySerializer(source="category", read_only=True)
     organizer = serializers.PrimaryKeyRelatedField(read_only=True)
     organizer_detail = UserShortSerializer(source="organizer", read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    reviews_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -46,6 +50,8 @@ class EventSerializer(serializers.ModelSerializer):
             "status",
             "is_published",
             "cover_image",
+            "average_rating",
+            "reviews_count",
             "created_at",
             "updated_at",
         )
@@ -55,6 +61,8 @@ class EventSerializer(serializers.ModelSerializer):
             "organizer_detail",
             "status",
             "is_published",
+            "average_rating",
+            "reviews_count",
             "created_at",
             "updated_at",
         )
@@ -114,9 +122,20 @@ class EventSerializer(serializers.ModelSerializer):
         validated_data.pop("is_published", None)
         return super().update(instance, validated_data)
 
+    @extend_schema_field(OpenApiTypes.FLOAT)
+    def get_average_rating(self, obj):
+        value = getattr(obj, "average_rating", None)
+        return None if value is None else round(float(value), 2)
+
+    @extend_schema_field(OpenApiTypes.INT)
+    def get_reviews_count(self, obj):
+        return int(getattr(obj, "reviews_count", 0) or 0)
+
 
 class EventListSerializer(serializers.ModelSerializer):
     category_detail = EventCategorySerializer(source="category", read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    reviews_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -131,7 +150,18 @@ class EventListSerializer(serializers.ModelSerializer):
             "status",
             "is_published",
             "cover_image",
+            "average_rating",
+            "reviews_count",
         )
+
+    @extend_schema_field(OpenApiTypes.FLOAT)
+    def get_average_rating(self, obj):
+        value = getattr(obj, "average_rating", None)
+        return None if value is None else round(float(value), 2)
+
+    @extend_schema_field(OpenApiTypes.INT)
+    def get_reviews_count(self, obj):
+        return int(getattr(obj, "reviews_count", 0) or 0)
 
 
 class PopularEventSerializer(serializers.ModelSerializer):

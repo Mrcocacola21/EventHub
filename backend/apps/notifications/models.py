@@ -10,6 +10,8 @@ class Notification(models.Model):
         BOOKING_USED = "BOOKING_USED", "Booking used"
         EVENT_CANCELED = "EVENT_CANCELED", "Event canceled"
         EVENT_REMINDER = "EVENT_REMINDER", "Event reminder"
+        REVIEW_CREATED = "REVIEW_CREATED", "Review created"
+        TOURNAMENT_STARTED = "TOURNAMENT_STARTED", "Tournament started"
         MATCH_STARTED = "MATCH_STARTED", "Match started"
         MATCH_RESULT_UPDATED = "MATCH_RESULT_UPDATED", "Match result updated"
         TOURNAMENT_FINISHED = "TOURNAMENT_FINISHED", "Tournament finished"

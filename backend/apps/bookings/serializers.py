@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.tickets.models import TicketType
@@ -14,6 +15,15 @@ class BookingTicketTypeDetailSerializer(serializers.ModelSerializer):
         model = TicketType
         fields = ("id", "name", "price", "event")
 
+    @extend_schema_field(
+        {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer"},
+                "title": {"type": "string"},
+            },
+        }
+    )
     def get_event(self, obj):
         return {
             "id": obj.event_id,
@@ -52,6 +62,15 @@ class BookingSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
+    @extend_schema_field(
+        {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer"},
+                "title": {"type": "string"},
+            },
+        }
+    )
     def get_event(self, obj):
         event = obj.event
         return {

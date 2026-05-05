@@ -78,6 +78,8 @@ Thumbs.db
 .mypy_cache/
 .ruff_cache/
 .coverage
+coverage.xml
+*.cover
 coverage/
 htmlcov/
 
