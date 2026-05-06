@@ -10,12 +10,6 @@
 
 EventHub is a production-ready full-stack platform for event management, ticket booking, QR/PDF tickets, tournaments, reviews, notifications and real-time updates.
 
-Suggested GitHub About description:
-
-```text
-Production-ready event and tournament platform with Django, DRF, React, PostgreSQL, Redis, Celery, Channels, atomic booking, QR validation, and PDF tickets.
-```
-
 ## Features
 
 Backend:
