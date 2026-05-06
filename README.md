@@ -10,6 +10,12 @@
 
 EventHub is a production-ready full-stack platform for event management, ticket booking, QR/PDF tickets, tournaments, reviews, notifications and real-time updates.
 
+Suggested GitHub About description:
+
+```text
+Production-ready event and tournament platform with Django, DRF, React, PostgreSQL, Redis, Celery, Channels, atomic booking, QR validation, and PDF tickets.
+```
+
 ## Features
 
 Backend:
@@ -203,27 +209,21 @@ WebSocket:
 
 ## Screenshots
 
-Screenshot placeholders are reserved in `screenshots/`:
-
-```text
-screenshots/
-  01-home.png
-  02-events.png
-  03-event-details.png
-  04-my-bookings.png
-  05-organizer-dashboard.png
-  06-tournament-bracket.png
-  07-swagger.png
-```
-
-| Page | Screenshot |
+| Home | Events |
 | --- | --- |
-| Home | TODO |
-| Events | TODO |
-| Event details | TODO |
-| Organizer dashboard | TODO |
-| Tournament bracket | TODO |
-| Swagger docs | TODO |
+| ![Home](screenshots/01-home.png) | ![Events](screenshots/02-events.png) |
+
+| Event Details | My Bookings |
+| --- | --- |
+| ![Event Details](screenshots/03-event-details.png) | ![My Bookings](screenshots/04-my-bookings.png) |
+
+| Organizer Dashboard | Tournament Bracket |
+| --- | --- |
+| ![Organizer Dashboard](screenshots/05-organizer-dashboard.png) | ![Tournament Bracket](screenshots/06-tournament-bracket.png) |
+
+| Swagger API Docs |
+| --- |
+| ![Swagger API Docs](screenshots/07-swagger.png) |
 
 ## Environment Variables
 
@@ -253,6 +253,19 @@ Run migrations:
 
 ```bash
 docker compose exec backend python manage.py migrate
+```
+
+Seed local demo data for portfolio screenshots:
+
+```bash
+docker compose exec backend python manage.py seed_demo
+```
+
+Demo credentials:
+
+```text
+Organizer: demo.organizer@eventhub.local / EventHubDemo123!
+User: demo.user@eventhub.local / EventHubDemo123!
 ```
 
 Create a superuser:
@@ -408,6 +421,16 @@ See [SECURITY.md](SECURITY.md) for the concise security policy.
 - OpenAPI docs.
 - pytest + coverage.
 - Dockerized architecture.
+
+## GitHub Topics
+
+Suggested topics:
+
+```text
+django, django-rest-framework, drf, react, vite, tailwindcss, postgresql, redis, celery, django-channels, jwt, openapi, swagger, pytest, docker, websocket, portfolio-project, event-management, ticket-booking, tournament-platform
+```
+
+Release and repository metadata instructions: [docs/github-portfolio.md](docs/github-portfolio.md).
 
 ## Commands Checklist
 
