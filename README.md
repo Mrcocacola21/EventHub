@@ -416,16 +416,6 @@ See [SECURITY.md](SECURITY.md) for the concise security policy.
 - pytest + coverage.
 - Dockerized architecture.
 
-## GitHub Topics
-
-Suggested topics:
-
-```text
-django, django-rest-framework, drf, react, vite, tailwindcss, postgresql, redis, celery, django-channels, jwt, openapi, swagger, pytest, docker, websocket, portfolio-project, event-management, ticket-booking, tournament-platform
-```
-
-Release and repository metadata instructions: [docs/github-portfolio.md](docs/github-portfolio.md).
-
 ## Commands Checklist
 
 Backend:
